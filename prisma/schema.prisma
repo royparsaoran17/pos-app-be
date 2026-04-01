@@ -1,0 +1,537 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STAFF
+  SUPERADMIN
+}
+
+// ==================== Multi-Store ====================
+model stores {
+  id         Int       @id @default(autoincrement())
+  name       String    @db.VarChar(100)
+  code       String    @unique @db.VarChar(20)
+  address    String?   @db.Text
+  phone      String?   @db.VarChar(20)
+  is_active  Boolean   @default(true)
+  created_at DateTime  @default(now())
+  updated_at DateTime? @updatedAt
+  deleted_at DateTime? @db.DateTime
+
+  users                users[]
+  orders               orders[]
+  shifts               shifts[]
+  stock_entries        stock_entries[]
+  expenses             expenses[]
+  staff_expenses       staff_expenses[]
+  finance_transactions finance_transactions[]
+  stock_opname         stock_opname[]
+  sop_checklists       sop_checklists[]
+  quality_checks       quality_checks[]
+  staff_attendance     staff_attendance[]
+  stock_packaging      stock_packaging[]
+
+  @@index([deleted_at])
+}
+
+enum PaymentMethod {
+  CASH
+  QRIS
+  PROMO
+  GOJEK
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+model users {
+  id         Int       @id @default(autoincrement())
+  store_id   Int?
+  name       String    @db.VarChar(100)
+  email      String    @unique @db.VarChar(100)
+  password   String    @db.VarChar(255)
+  role       Role      @default(STAFF)
+  is_active  Boolean   @default(true)
+  created_at DateTime  @default(now())
+  updated_at DateTime? @updatedAt
+  deleted_at DateTime? @db.DateTime
+
+  store           stores?  @relation(fields: [store_id], references: [id])
+  orders          orders[]
+  sop_checklists  sop_checklists[]
+  quality_checks  quality_checks[]
+  stock_opname    stock_opname[]
+  staff_expenses  staff_expenses[]
+  attendances     staff_attendance[]
+  shifts           shifts[]
+  stock_packaging  stock_packaging[]
+
+  @@index([store_id])
+}
+
+model members {
+  id           Int       @id @default(autoincrement())
+  name         String?   @db.VarChar(100)
+  phone        String    @unique @db.VarChar(20)
+  total_orders Int       @default(0)
+  total_spent  Int       @default(0)
+  is_active    Boolean   @default(true)
+  created_at   DateTime  @default(now())
+  updated_at   DateTime? @updatedAt
+  deleted_at   DateTime? @db.DateTime
+
+  orders orders[]
+
+  @@index([deleted_at])
+}
+
+model toppings {
+  id                Int       @id @default(autoincrement())
+  name              String    @db.VarChar(100)
+  gram_per_portion  Float     @default(0)
+  is_active         Boolean   @default(true)
+  created_at        DateTime  @default(now())
+  updated_at        DateTime? @updatedAt
+  deleted_at        DateTime? @db.DateTime
+
+  order_items_toppings  order_item_toppings[]
+  stock_entries         stock_entries[]
+  quality_check_items   quality_check_items[]
+  stock_opname_items    stock_opname_items[]
+
+  @@index([deleted_at])
+}
+
+model bumbu {
+  id         Int       @id @default(autoincrement())
+  name       String    @db.VarChar(100)
+  is_active  Boolean   @default(true)
+  created_at DateTime  @default(now())
+  updated_at DateTime? @updatedAt
+  deleted_at DateTime? @db.DateTime
+
+  stock_entries stock_entries[]
+
+  @@index([deleted_at])
+}
+
+model menu_sizes {
+  id            Int       @id @default(autoincrement())
+  key           String    @unique @db.VarChar(50)
+  label         String    @db.VarChar(100)
+  price         Int
+  hpp           Int       @default(0)
+  max_toppings  Int?
+  is_active     Boolean   @default(true)
+  sort_order    Int       @default(0)
+  created_at    DateTime  @default(now())
+  updated_at    DateTime? @updatedAt
+  deleted_at    DateTime? @db.DateTime
+
+  @@index([deleted_at])
+}
+
+model promos {
+  id             Int          @id @default(autoincrement())
+  code           String       @unique @db.VarChar(50)
+  name           String       @db.VarChar(100)
+  description    String?      @db.Text
+  discount_type  DiscountType @default(PERCENTAGE)
+  discount_value Int
+  min_purchase   Int          @default(0)
+  max_discount   Int?
+  max_usage      Int?
+  used_count     Int          @default(0)
+  is_active      Boolean      @default(true)
+  start_date     DateTime?    @db.DateTime
+  end_date       DateTime?    @db.DateTime
+  created_at     DateTime     @default(now())
+  updated_at     DateTime?    @updatedAt
+  deleted_at     DateTime?    @db.DateTime
+
+  orders orders[]
+
+  @@index([deleted_at])
+}
+
+model orders {
+  id              Int           @id @default(autoincrement())
+  store_id        Int
+  order_number    String        @unique @db.VarChar(50)
+  queue_number    Int           @default(0)
+  staff_id        Int
+  member_id       Int?
+  promo_id        Int?
+  subtotal        Int           @default(0)
+  discount_amount Int           @default(0)
+  total_price     Int           @default(0)
+  payment_method  PaymentMethod
+  status          OrderStatus   @default(COMPLETED)
+  notes           String?       @db.Text
+  created_at      DateTime      @default(now())
+  updated_at      DateTime?     @updatedAt
+  deleted_at      DateTime?     @db.DateTime
+
+  store       stores        @relation(fields: [store_id], references: [id])
+  staff       users         @relation(fields: [staff_id], references: [id])
+  member      members?      @relation(fields: [member_id], references: [id])
+  promo       promos?       @relation(fields: [promo_id], references: [id])
+  order_items order_items[]
+
+  @@index([store_id])
+  @@index([staff_id])
+  @@index([member_id])
+  @@index([created_at])
+  @@index([payment_method])
+  @@index([deleted_at])
+}
+
+model order_items {
+  id            Int    @id @default(autoincrement())
+  order_id      Int
+  menu_size_key String @db.VarChar(50)
+  price         Int
+  spicy_level   Float
+  bumbu         String @db.VarChar(100)
+
+  created_at DateTime  @default(now())
+  updated_at DateTime? @updatedAt
+
+  order    orders                @relation(fields: [order_id], references: [id])
+  toppings order_item_toppings[]
+
+  @@index([order_id])
+}
+
+model order_item_toppings {
+  id            Int @id @default(autoincrement())
+  order_item_id Int
+  topping_id    Int
+
+  order_item order_items @relation(fields: [order_item_id], references: [id])
+  topping    toppings    @relation(fields: [topping_id], references: [id])
+}
+
+enum StockItemType {
+  TOPPING
+  BUMBU
+  OTHER
+}
+
+model stock_entries {
+  id            Int           @id @default(autoincrement())
+  store_id      Int
+  item_type     StockItemType
+  item_name     String        @db.VarChar(100)
+  topping_id    Int?
+  bumbu_id      Int?
+  quantity      Float
+  unit          String        @db.VarChar(30)
+  purchase_price Int
+  total_cost    Int
+  supplier      String?       @db.VarChar(100)
+  notes         String?       @db.Text
+  entry_date    DateTime      @default(now())
+  created_at    DateTime      @default(now())
+  updated_at    DateTime?     @updatedAt
+  deleted_at    DateTime?     @db.DateTime
+
+  store   stores    @relation(fields: [store_id], references: [id])
+  topping toppings? @relation(fields: [topping_id], references: [id])
+  bumbu   bumbu?    @relation(fields: [bumbu_id], references: [id])
+
+  @@index([store_id])
+  @@index([entry_date])
+  @@index([deleted_at])
+}
+
+model expense_categories {
+  id         Int       @id @default(autoincrement())
+  name       String    @unique @db.VarChar(100)
+  is_active  Boolean   @default(true)
+  created_at DateTime  @default(now())
+  updated_at DateTime? @updatedAt
+  deleted_at DateTime? @db.DateTime
+
+  expenses        expenses[]
+  staff_expenses  staff_expenses[]
+}
+
+model expenses {
+  id          Int       @id @default(autoincrement())
+  store_id    Int
+  category_id Int
+  description String    @db.VarChar(255)
+  amount      Int
+  expense_date DateTime @default(now())
+  notes       String?   @db.Text
+  created_at  DateTime  @default(now())
+  updated_at  DateTime? @updatedAt
+  deleted_at  DateTime? @db.DateTime
+
+  store    stores             @relation(fields: [store_id], references: [id])
+  category expense_categories @relation(fields: [category_id], references: [id])
+
+  @@index([store_id])
+  @@index([expense_date])
+  @@index([deleted_at])
+}
+
+enum SOPCategory {
+  OPENING
+  OPERATIONAL
+  CLOSING
+}
+
+model sop_tasks {
+  id          Int         @id @default(autoincrement())
+  category    SOPCategory
+  sort_order  Int         @default(0)
+  description String      @db.VarChar(500)
+  is_active   Boolean     @default(true)
+  created_at  DateTime    @default(now())
+  updated_at  DateTime?   @updatedAt
+
+  checklist_items sop_checklist_items[]
+}
+
+model sop_checklists {
+  id          Int      @id @default(autoincrement())
+  store_id    Int
+  staff_id    Int
+  shift_date  DateTime @db.Date
+  created_at  DateTime @default(now())
+  updated_at  DateTime? @updatedAt
+
+  store stores              @relation(fields: [store_id], references: [id])
+  staff users                @relation(fields: [staff_id], references: [id])
+  items sop_checklist_items[]
+
+  @@unique([staff_id, shift_date])
+  @@index([store_id])
+}
+
+model sop_checklist_items {
+  id            Int      @id @default(autoincrement())
+  checklist_id  Int
+  task_id       Int
+  is_checked    Boolean  @default(false)
+  checked_at    DateTime? @db.DateTime
+  notes         String?  @db.VarChar(255)
+
+  checklist sop_checklists @relation(fields: [checklist_id], references: [id])
+  task      sop_tasks      @relation(fields: [task_id], references: [id])
+}
+
+enum QualityStatus {
+  GOOD
+  WARNING
+  BAD
+}
+
+model quality_checks {
+  id          Int      @id @default(autoincrement())
+  store_id    Int
+  staff_id    Int
+  check_date  DateTime @db.Date
+  notes       String?  @db.Text
+  created_at  DateTime @default(now())
+  updated_at  DateTime? @updatedAt
+
+  store stores                @relation(fields: [store_id], references: [id])
+  staff users                 @relation(fields: [staff_id], references: [id])
+  items quality_check_items[]
+
+  @@index([store_id])
+}
+
+model quality_check_items {
+  id              Int           @id @default(autoincrement())
+  quality_check_id Int
+  topping_id      Int
+  status          QualityStatus @default(GOOD)
+  notes           String?       @db.VarChar(255)
+
+  quality_check quality_checks @relation(fields: [quality_check_id], references: [id])
+  topping       toppings       @relation(fields: [topping_id], references: [id])
+}
+
+model stock_opname {
+  id          Int      @id @default(autoincrement())
+  store_id    Int
+  staff_id    Int
+  opname_date DateTime @db.Date
+  created_at  DateTime @default(now())
+  updated_at  DateTime? @updatedAt
+
+  store stores              @relation(fields: [store_id], references: [id])
+  staff users               @relation(fields: [staff_id], references: [id])
+  items stock_opname_items[]
+
+  @@unique([staff_id, opname_date])
+  @@index([store_id])
+}
+
+model stock_opname_items {
+  id            Int    @id @default(autoincrement())
+  opname_id     Int
+  topping_id    Int
+  weight_kg     Float
+  notes         String? @db.VarChar(255)
+
+  opname  stock_opname @relation(fields: [opname_id], references: [id])
+  topping toppings     @relation(fields: [topping_id], references: [id])
+}
+
+model staff_expenses {
+  id          Int      @id @default(autoincrement())
+  store_id    Int
+  staff_id    Int
+  category_id Int
+  description String   @db.VarChar(255)
+  amount      Int
+  expense_date DateTime @default(now())
+  notes       String?  @db.Text
+  created_at  DateTime @default(now())
+  updated_at  DateTime? @updatedAt
+  deleted_at  DateTime? @db.DateTime
+
+  store    stores             @relation(fields: [store_id], references: [id])
+  staff    users              @relation(fields: [staff_id], references: [id])
+  category expense_categories @relation(fields: [category_id], references: [id])
+
+  @@index([store_id])
+  @@index([staff_id])
+  @@index([expense_date])
+  @@index([deleted_at])
+}
+
+model staff_attendance {
+  id         Int      @id @default(autoincrement())
+  store_id   Int
+  staff_id   Int
+  login_date DateTime @db.Date
+  login_at   DateTime @default(now())
+  ip_address String?  @db.VarChar(50)
+  created_at DateTime @default(now())
+
+  store stores @relation(fields: [store_id], references: [id])
+  staff users  @relation(fields: [staff_id], references: [id])
+
+  @@unique([staff_id, login_date])
+  @@index([store_id])
+}
+
+// ==================== Shift Management ====================
+enum ShiftStatus {
+  OPEN
+  CLOSED
+}
+
+model shifts {
+  id              Int         @id @default(autoincrement())
+  store_id        Int
+  staff_id        Int
+  shift_date      DateTime    @db.Date
+  open_time       DateTime    @default(now())
+  close_time      DateTime?
+  opening_cash    Int         @default(0)
+  closing_cash    Int?
+  expected_cash   Int?
+  cash_difference Int?
+  total_orders    Int         @default(0)
+  total_revenue   Int         @default(0)
+  status          ShiftStatus @default(OPEN)
+  notes           String?     @db.Text
+  created_at      DateTime    @default(now())
+  updated_at      DateTime?   @updatedAt
+
+  store stores @relation(fields: [store_id], references: [id])
+  staff users  @relation(fields: [staff_id], references: [id])
+
+  @@index([store_id])
+}
+
+// ==================== Supplier Management ====================
+model suppliers {
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(100)
+  phone       String?   @db.VarChar(20)
+  address     String?   @db.Text
+  email       String?   @db.VarChar(100)
+  contact_person String? @db.VarChar(100)
+  notes       String?   @db.Text
+  is_active   Boolean   @default(true)
+  created_at  DateTime  @default(now())
+  updated_at  DateTime? @updatedAt
+  deleted_at  DateTime? @db.DateTime
+
+  @@index([deleted_at])
+}
+
+// ==================== Stock Packaging ====================
+model stock_packaging {
+  id              Int      @id @default(autoincrement())
+  store_id        Int
+  staff_id        Int
+  menu_size_key   String   @db.VarChar(50)
+  quantity        Int
+  packaging_date  DateTime @db.Date
+  notes           String?  @db.Text
+  created_at      DateTime @default(now())
+  updated_at      DateTime? @updatedAt
+
+  store stores @relation(fields: [store_id], references: [id])
+  staff users  @relation(fields: [staff_id], references: [id])
+
+  @@index([store_id])
+}
+
+// ==================== Finance / Kas ====================
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum WalletType {
+  CASH
+  BANK
+  QRIS
+}
+
+model finance_transactions {
+  id                Int              @id @default(autoincrement())
+  store_id          Int
+  type              TransactionType
+  wallet            WalletType
+  amount            Int
+  description       String           @db.VarChar(255)
+  category          String?          @db.VarChar(100)
+  transaction_date  DateTime         @db.Date
+  notes             String?          @db.Text
+  created_at        DateTime         @default(now())
+  updated_at        DateTime?        @updatedAt
+  deleted_at        DateTime?        @db.DateTime
+
+  store stores @relation(fields: [store_id], references: [id])
+
+  @@index([store_id])
+  @@index([transaction_date])
+  @@index([type])
+  @@index([wallet])
+  @@index([deleted_at])
+}
