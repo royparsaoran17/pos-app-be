@@ -41,6 +41,11 @@ export class CreateOrderDto {
   @IsNotEmpty({ message: 'Metode pembayaran wajib dipilih' })
   payment_method: string;
 
+  @ApiProperty({ required: false, example: 'Budi' })
+  @IsOptional()
+  @IsString()
+  customer_name?: string;
+
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()

@@ -123,6 +123,7 @@ export class OrderService {
           subtotal,
           discount_amount: discountAmount,
           total_price: totalPrice,
+          customer_name: dto.customer_name || null,
           payment_method: dto.payment_method as any,
           notes: dto.notes,
           order_items: {
@@ -140,6 +141,7 @@ export class OrderService {
           },
         },
         include: {
+          store: { select: { id: true, name: true, address: true, phone: true, instagram: true, tiktok: true } },
           staff: { select: { id: true, name: true } },
           member: { select: { id: true, name: true, phone: true } },
           promo: { select: { id: true, code: true, name: true, discount_type: true, discount_value: true } },
@@ -181,6 +183,7 @@ export class OrderService {
     if (query.search) {
       where.OR = [
         { order_number: { contains: query.search } },
+        { customer_name: { contains: query.search } },
         { member: { phone: { contains: query.search } } },
         { member: { name: { contains: query.search } } },
       ];
@@ -203,6 +206,7 @@ export class OrderService {
         where, skip, take: perPage,
         orderBy: { [orderByField]: orderDirection },
         include: {
+          store: { select: { id: true, name: true, address: true, phone: true, instagram: true, tiktok: true } },
           staff: { select: { id: true, name: true } },
           member: { select: { id: true, name: true, phone: true } },
           promo: { select: { id: true, code: true, name: true } },
@@ -225,6 +229,7 @@ export class OrderService {
     const order = await this.prisma.orders.findFirst({
       where: { id, deleted_at: null },
       include: {
+        store: { select: { id: true, name: true, address: true, phone: true, instagram: true, tiktok: true } },
         staff: { select: { id: true, name: true } },
         member: { select: { id: true, name: true, phone: true } },
         promo: { select: { id: true, code: true, name: true, discount_type: true, discount_value: true } },

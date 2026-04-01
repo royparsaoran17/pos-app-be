@@ -19,6 +19,8 @@ model stores {
   code       String    @unique @db.VarChar(20)
   address    String?   @db.Text
   phone      String?   @db.VarChar(20)
+  instagram  String?   @db.VarChar(100)
+  tiktok     String?   @db.VarChar(100)
   is_active  Boolean   @default(true)
   created_at DateTime  @default(now())
   updated_at DateTime? @updatedAt
@@ -130,13 +132,14 @@ model bumbu {
 }
 
 model menu_sizes {
-  id            Int       @id @default(autoincrement())
-  key           String    @unique @db.VarChar(50)
-  label         String    @db.VarChar(100)
-  price         Int
-  hpp           Int       @default(0)
-  max_toppings  Int?
-  is_active     Boolean   @default(true)
+  id                Int       @id @default(autoincrement())
+  key               String    @unique @db.VarChar(50)
+  label             String    @db.VarChar(100)
+  price             Int
+  hpp               Int       @default(0)
+  max_toppings      Int?
+  total_topping_gram Int?
+  is_active         Boolean   @default(true)
   sort_order    Int       @default(0)
   created_at    DateTime  @default(now())
   updated_at    DateTime? @updatedAt
@@ -179,6 +182,7 @@ model orders {
   subtotal        Int           @default(0)
   discount_amount Int           @default(0)
   total_price     Int           @default(0)
+  customer_name   String?       @db.VarChar(100)
   payment_method  PaymentMethod
   status          OrderStatus   @default(COMPLETED)
   notes           String?       @db.Text
