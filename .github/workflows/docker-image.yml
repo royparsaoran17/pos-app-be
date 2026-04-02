@@ -1,0 +1,27 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: "Build and Push Docker Image"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Login to Docker Registry
+        run: docker login registry.digitalocean.com/so-thai -u "${{ secrets.DOCKER_KEY }}" -p "${{ secrets.DOCKER_KEY }}"
+
+      - name: Build Docker Image
+        run: docker build --build-arg VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }} -t "registry.digitalocean.com/so-thai/omt-be:latest" .
+
+      - name: Push Docker Image to Registry
+        run: docker push "registry.digitalocean.com/so-thai/omt-be:latest"
+
+      - name: Logout from Registry
+        run: docker logout
