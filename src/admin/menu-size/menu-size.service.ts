@@ -39,14 +39,14 @@ export class MenuSizeService {
     if (exists) throw new ConflictException('Key sudah digunakan');
 
     const row = await this.prisma.menu_sizes.create({
-      data: { ...dto, key: dto.key.toUpperCase() },
+      data: { ...dto, key: dto.key.toUpperCase() } as any,
     });
     return { content: row, message: 'Menu/ukuran berhasil ditambahkan' };
   }
 
   async update(id: number, dto: UpdateMenuSizeDto) {
     await this.findOne(id);
-    const row = await this.prisma.menu_sizes.update({ where: { id }, data: dto });
+    const row = await this.prisma.menu_sizes.update({ where: { id }, data: dto as any });
     return { content: row, message: 'Menu/ukuran berhasil diperbarui' };
   }
 

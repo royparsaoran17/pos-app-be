@@ -33,11 +33,21 @@ export class OrderService {
       if (!sizeData) {
         throw new BadRequestException(`Ukuran "${item.size}" tidak valid`);
       }
-      if (sizeData.max_toppings !== null && item.topping_ids.length > sizeData.max_toppings) {
-        throw new BadRequestException(
-          `Ukuran ${sizeData.label} maksimal ${sizeData.max_toppings} topping`,
-        );
+      const isFood = sizeData.category === 'FOOD';
+      if (isFood) {
+        if (!item.bumbu || item.bumbu.length === 0) {
+          throw new BadRequestException('Bumbu wajib dipilih minimal 1 untuk makanan');
+        }
+        if (sizeData.max_toppings !== null && (item.topping_ids?.length || 0) > sizeData.max_toppings) {
+          throw new BadRequestException(
+            `Ukuran ${sizeData.label} maksimal ${sizeData.max_toppings} topping`,
+          );
+        }
       }
+      // Ensure defaults for drinks
+      if (!item.topping_ids) item.topping_ids = [];
+      if (!item.bumbu) item.bumbu = [];
+      if (!item.spicy_level && item.spicy_level !== 0) item.spicy_level = 0;
     }
 
     // Calculate subtotal
@@ -130,13 +140,13 @@ export class OrderService {
             create: dto.items.map((item) => ({
               menu_size_key: item.size,
               price: sizeMap.get(item.size).price,
-              spicy_level: item.spicy_level,
-              bumbu: Array.isArray(item.bumbu) ? item.bumbu.join(', ') : item.bumbu,
-              toppings: {
+              spicy_level: item.spicy_level || 0,
+              bumbu: Array.isArray(item.bumbu) ? item.bumbu.join(', ') : (item.bumbu || ''),
+              toppings: item.topping_ids?.length ? {
                 create: item.topping_ids.map((toppingId) => ({
                   topping_id: toppingId,
                 })),
-              },
+              } : undefined,
             })),
           },
         },

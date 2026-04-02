@@ -12,18 +12,20 @@ export class OrderItemDto {
   size: string;
 
   @ApiProperty({ type: [Number], example: [1, 2] })
+  @IsOptional()
   @IsArray({ message: 'Topping harus berupa array' })
   topping_ids: number[];
 
   @ApiProperty({ type: [String], example: ['Minyak Bawang', 'Daun Jeruk'] })
+  @IsOptional()
   @IsArray({ message: 'Bumbu harus berupa array' })
-  @ArrayMinSize(1, { message: 'Bumbu wajib dipilih minimal 1' })
   @IsString({ each: true })
   bumbu: string[];
 
   @ApiProperty({ example: 2.5 })
+  @IsOptional()
   @IsNumber({}, { message: 'Level pedas harus berupa angka' })
-  @Min(0.5, { message: 'Level pedas minimal 0.5' })
+  @Min(0, { message: 'Level pedas minimal 0' })
   @Max(5, { message: 'Level pedas maksimal 5' })
   spicy_level: number;
 }
