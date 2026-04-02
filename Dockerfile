@@ -2,6 +2,8 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+RUN apk add --no-cache openssl libc6-compat
+
 COPY package*.json ./
 RUN npm ci
 
@@ -14,18 +16,16 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+RUN apk add --no-cache openssl libc6-compat
+
 COPY package*.json ./
 RUN npm ci --omit=dev
 
-# Copy built app
 COPY --from=builder /app/dist ./dist
-
-# Copy Prisma generated client + schema (needed for migrations)
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
 COPY prisma ./prisma
 
-# Copy entrypoint
 COPY entrypoint.sh ./
 RUN chmod +x entrypoint.sh
 
