@@ -56,6 +56,27 @@ export class DashboardController {
     return this.dashboardService.getDailyRecap(targetDate, storeId);
   }
 
+  @Get('topping-stock')
+  @Roles('SUPERADMIN')
+  @ApiOperation({ summary: 'Stok & pemakaian topping' })
+  @ApiQuery({ name: 'date', required: false, description: 'Tanggal (YYYY-MM-DD), default hari ini' })
+  async getToppingStock(@Query('date') date?: string, @StoreId() storeId?: number) {
+    return this.dashboardService.getToppingStock(date, storeId);
+  }
+
+  @Get('analytics')
+  @Roles('SUPERADMIN')
+  @ApiOperation({ summary: 'Business analytics (trends, channels, peak hours, etc)' })
+  @ApiQuery({ name: 'date_from', required: false })
+  @ApiQuery({ name: 'date_to', required: false })
+  async getAnalytics(
+    @Query('date_from') dateFrom?: string,
+    @Query('date_to') dateTo?: string,
+    @StoreId() storeId?: number,
+  ) {
+    return this.dashboardService.getAnalytics(dateFrom, dateTo, storeId);
+  }
+
   @Get('attendance')
   @Roles('SUPERADMIN')
   @ApiOperation({ summary: 'Riwayat absensi staff' })

@@ -3,12 +3,17 @@ import { AppModule } from './app.module';
 import { ValidationPipe, HttpStatus } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
+import * as bodyParser from 'body-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.use(helmet());
   app.enableCors({ origin: '*' });
+
+  // Increase body size limit for photo uploads (base64 images)
+  app.use(bodyParser.json({ limit: '10mb' }));
+  app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 
   app.useGlobalPipes(
     new ValidationPipe({

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { PrismaService } from './prisma.service';
 import { AuthModule } from './auth/auth.module';
 import { OrderModule } from './order/order.module';
@@ -22,10 +23,12 @@ import { ShiftModule } from './staff/shift/shift.module';
 import { PackagingModule } from './staff/packaging/packaging.module';
 import { FinanceModule } from './admin/finance/finance.module';
 import { StoreModule } from './admin/store/store.module';
+import { PhotoboothModule } from './staff/photobooth/photobooth.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ScheduleModule.forRoot(),
     AuthModule,
     OrderModule,
     MasterModule,
@@ -47,6 +50,7 @@ import { StoreModule } from './admin/store/store.module';
     PackagingModule,
     FinanceModule,
     StoreModule,
+    PhotoboothModule,
   ],
   providers: [PrismaService],
   exports: [PrismaService],

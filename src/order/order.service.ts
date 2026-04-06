@@ -50,6 +50,13 @@ export class OrderService {
       if (!item.spicy_level && item.spicy_level !== 0) item.spicy_level = 0;
     }
 
+    // Load toppings for gram calculation
+    const allToppingIds = [...new Set(dto.items.flatMap(item => item.topping_ids || []))];
+    const toppingsData = allToppingIds.length ? await this.prisma.toppings.findMany({
+      where: { id: { in: allToppingIds } },
+    }) : [];
+    const toppingMap = new Map(toppingsData.map(t => [t.id, t]));
+
     // Calculate subtotal
     let subtotal = 0;
     for (const item of dto.items) {
@@ -134,20 +141,39 @@ export class OrderService {
           discount_amount: discountAmount,
           total_price: totalPrice,
           customer_name: dto.customer_name || null,
+          acquisition_channel: dto.acquisition_channel || null,
           payment_method: dto.payment_method as any,
           notes: dto.notes,
           order_items: {
-            create: dto.items.map((item) => ({
-              menu_size_key: item.size,
-              price: sizeMap.get(item.size).price,
-              spicy_level: item.spicy_level || 0,
-              bumbu: Array.isArray(item.bumbu) ? item.bumbu.join(', ') : (item.bumbu || ''),
-              toppings: item.topping_ids?.length ? {
-                create: item.topping_ids.map((toppingId) => ({
-                  topping_id: toppingId,
-                })),
-              } : undefined,
-            })),
+            create: dto.items.map((item) => {
+              const sizeData = sizeMap.get(item.size);
+              const toppingIds = item.topping_ids || [];
+              const toppingCount = toppingIds.length;
+
+              return {
+                menu_size_key: item.size,
+                price: sizeData.price,
+                spicy_level: item.spicy_level || 0,
+                bumbu: Array.isArray(item.bumbu) ? item.bumbu.join(', ') : (item.bumbu || ''),
+                toppings: toppingCount ? {
+                  create: toppingIds.map((toppingId) => {
+                    let gramUsed = 0;
+                    if (sizeData.category === 'FOOD' && toppingCount > 0) {
+                      if (!sizeData.max_toppings && sizeData.total_topping_gram) {
+                        // Unlimited sizes (Thinwall/Large): total gram / number of toppings
+                        gramUsed = Math.round((sizeData.total_topping_gram / toppingCount) * 10) / 10;
+                      } else if (sizeData.max_toppings) {
+                        // Limited sizes (Small/Medium): gram_per_portion * multiplier
+                        const topping = toppingMap.get(toppingId);
+                        const multiplier = Math.floor(sizeData.max_toppings / toppingCount);
+                        gramUsed = Math.round((topping?.gram_per_portion || 0) * multiplier * 10) / 10;
+                      }
+                    }
+                    return { topping_id: toppingId, gram_used: gramUsed };
+                  }),
+                } : undefined,
+              };
+            }),
           },
         },
         include: {
@@ -265,6 +291,13 @@ export class OrderService {
       const menuSizes = await this.prisma.menu_sizes.findMany({ where: { deleted_at: null, is_active: true } });
       const sizeMap = new Map(menuSizes.map((s) => [s.key, s]));
 
+      // Load toppings for gram calculation
+      const allToppingIds = Array.from(new Set<number>(dto.items.flatMap((item: any) => item.topping_ids || [])));
+      const toppingsData = allToppingIds.length ? await this.prisma.toppings.findMany({
+        where: { id: { in: allToppingIds } },
+      }) : [];
+      const editToppingMap = new Map(toppingsData.map(t => [t.id, t]));
+
       // Validate items before transaction
       let subtotal = 0;
       for (const item of dto.items) {
@@ -288,23 +321,34 @@ export class OrderService {
         // Recreate items
         for (const item of dto.items) {
           const sizeData = sizeMap.get(item.size);
+          const toppingIds = item.topping_ids || [];
+          const toppingCount = toppingIds.length;
 
           const createdItem = await tx.order_items.create({
             data: {
               order_id: id,
               menu_size_key: item.size,
               price: sizeData.price,
-              spicy_level: item.spicy_level,
-              bumbu: Array.isArray(item.bumbu) ? item.bumbu.join(', ') : item.bumbu,
+              spicy_level: item.spicy_level || 0,
+              bumbu: Array.isArray(item.bumbu) ? item.bumbu.join(', ') : (item.bumbu || ''),
             },
           });
 
-          if (item.topping_ids?.length) {
+          if (toppingCount) {
             await tx.order_item_toppings.createMany({
-              data: item.topping_ids.map((tid: number) => ({
-                order_item_id: createdItem.id,
-                topping_id: tid,
-              })),
+              data: toppingIds.map((tid: number) => {
+                let gramUsed = 0;
+                if (sizeData.category === 'FOOD' && toppingCount > 0) {
+                  if (!sizeData.max_toppings && sizeData.total_topping_gram) {
+                    gramUsed = Math.round((sizeData.total_topping_gram / toppingCount) * 10) / 10;
+                  } else if (sizeData.max_toppings) {
+                    const topping = editToppingMap.get(tid);
+                    const multiplier = Math.floor(sizeData.max_toppings / toppingCount);
+                    gramUsed = Math.round((topping?.gram_per_portion || 0) * multiplier * 10) / 10;
+                  }
+                }
+                return { order_item_id: createdItem.id, topping_id: tid, gram_used: gramUsed };
+              }),
             });
           }
         }

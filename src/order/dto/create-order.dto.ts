@@ -48,6 +48,11 @@ export class CreateOrderDto {
   @IsString()
   customer_name?: string;
 
+  @ApiProperty({ required: false, example: 'Pembeli Lama' })
+  @IsOptional()
+  @IsString()
+  acquisition_channel?: string;
+
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()

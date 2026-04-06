@@ -14,6 +14,9 @@ export class OpnameService {
   }
 
   async getOrCreate(staffId: number, date: string, storeId: number) {
+    if (!storeId) {
+      throw new BadRequestException('Pilih toko terlebih dahulu');
+    }
     const opnameDate = new Date(date);
     let opname = await this.prisma.stock_opname.findUnique({
       where: { staff_id_opname_date: { staff_id: staffId, opname_date: opnameDate } },
@@ -45,6 +48,9 @@ export class OpnameService {
   }
 
   async save(staffId: number, date: string, items: { topping_id: number; weight_kg: number; notes?: string }[], storeId: number) {
+    if (!storeId) {
+      throw new BadRequestException('Pilih toko terlebih dahulu');
+    }
     const opnameDate = new Date(date);
     let opname = await this.prisma.stock_opname.findUnique({
       where: { staff_id_opname_date: { staff_id: staffId, opname_date: opnameDate } },

@@ -38,6 +38,7 @@ model stores {
   quality_checks       quality_checks[]
   staff_attendance     staff_attendance[]
   stock_packaging      stock_packaging[]
+  photo_strips         photo_strips[]
 
   @@index([deleted_at])
 }
@@ -188,10 +189,11 @@ model orders {
   subtotal        Int           @default(0)
   discount_amount Int           @default(0)
   total_price     Int           @default(0)
-  customer_name   String?       @db.VarChar(100)
-  payment_method  PaymentMethod
-  status          OrderStatus   @default(COMPLETED)
-  notes           String?       @db.Text
+  customer_name       String?       @db.VarChar(100)
+  acquisition_channel String?       @db.VarChar(50)
+  payment_method      PaymentMethod
+  status              OrderStatus   @default(COMPLETED)
+  notes               String?       @db.Text
   created_at      DateTime      @default(now())
   updated_at      DateTime?     @updatedAt
   deleted_at      DateTime?     @db.DateTime
@@ -228,12 +230,15 @@ model order_items {
 }
 
 model order_item_toppings {
-  id            Int @id @default(autoincrement())
+  id            Int   @id @default(autoincrement())
   order_item_id Int
   topping_id    Int
+  gram_used     Float @default(0)
 
   order_item order_items @relation(fields: [order_item_id], references: [id])
   topping    toppings    @relation(fields: [topping_id], references: [id])
+
+  @@index([topping_id])
 }
 
 enum StockItemType {
@@ -544,4 +549,19 @@ model finance_transactions {
   @@index([type])
   @@index([wallet])
   @@index([deleted_at])
+}
+
+// ==================== Photobooth ====================
+model photo_strips {
+  id         Int      @id @default(autoincrement())
+  store_id   Int
+  token      String   @unique @db.VarChar(64)
+  filename   String   @db.VarChar(255)
+  expires_at DateTime
+  created_at DateTime @default(now())
+
+  store stores @relation(fields: [store_id], references: [id])
+
+  @@index([token])
+  @@index([expires_at])
 }
