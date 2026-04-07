@@ -3,8 +3,6 @@ services:
     image: registry.digitalocean.com/so-thai/omt-be:latest
     container_name: omt-be
     restart: unless-stopped
-    ports:
-      - "${PORT:-3000}:${PORT:-3000}"
     env_file:
       - .env
     environment:
