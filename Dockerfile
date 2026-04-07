@@ -28,9 +28,6 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
 COPY prisma ./prisma
 
-COPY entrypoint.sh ./
-RUN chmod +x entrypoint.sh
-
 EXPOSE 9005
 
-ENTRYPOINT ["./entrypoint.sh"]
+CMD ["npm", "run", "start:prod"]
