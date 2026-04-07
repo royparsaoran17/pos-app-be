@@ -5,6 +5,17 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
+export class OrderItemAdditionalDto {
+  @ApiProperty({ example: 1 })
+  @IsNumber()
+  additional_id: number;
+
+  @ApiProperty({ example: 1 })
+  @IsOptional()
+  @IsNumber()
+  qty?: number;
+}
+
 export class OrderItemDto {
   @ApiProperty({ example: 'SMALL' })
   @IsString({ message: 'Ukuran harus berupa string' })
@@ -28,6 +39,13 @@ export class OrderItemDto {
   @Min(0, { message: 'Level pedas minimal 0' })
   @Max(5, { message: 'Level pedas maksimal 5' })
   spicy_level: number;
+
+  @ApiProperty({ type: [OrderItemAdditionalDto], required: false })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OrderItemAdditionalDto)
+  additionals?: OrderItemAdditionalDto[];
 }
 
 export class CreateOrderDto {

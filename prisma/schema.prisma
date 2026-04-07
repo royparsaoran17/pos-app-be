@@ -223,8 +223,9 @@ model order_items {
   created_at DateTime  @default(now())
   updated_at DateTime? @updatedAt
 
-  order    orders                @relation(fields: [order_id], references: [id])
-  toppings order_item_toppings[]
+  order       orders                   @relation(fields: [order_id], references: [id])
+  toppings    order_item_toppings[]
+  additionals order_item_additionals[]
 
   @@index([order_id])
 }
@@ -549,6 +550,36 @@ model finance_transactions {
   @@index([type])
   @@index([wallet])
   @@index([deleted_at])
+}
+
+// ==================== Additionals (Cheese, Chili Oil, etc.) ====================
+model additionals {
+  id         Int       @id @default(autoincrement())
+  name       String    @db.VarChar(100)
+  price      Int       @default(0)
+  is_active  Boolean   @default(true)
+  sort_order Int       @default(0)
+  created_at DateTime  @default(now())
+  updated_at DateTime? @updatedAt
+  deleted_at DateTime? @db.DateTime
+
+  order_item_additionals order_item_additionals[]
+
+  @@index([deleted_at])
+}
+
+model order_item_additionals {
+  id            Int @id @default(autoincrement())
+  order_item_id Int
+  additional_id Int
+  qty           Int @default(1)
+  price         Int @default(0)
+
+  order_item order_items  @relation(fields: [order_item_id], references: [id])
+  additional additionals  @relation(fields: [additional_id], references: [id])
+
+  @@index([order_item_id])
+  @@index([additional_id])
 }
 
 // ==================== Photobooth ====================

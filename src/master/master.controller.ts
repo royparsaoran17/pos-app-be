@@ -28,6 +28,18 @@ export class MasterController {
     return this.masterService.getSizes();
   }
 
+  @Get('additionals')
+  @ApiOperation({ summary: 'Daftar additional (cheese, chili oil, etc.)' })
+  async getAdditionals() {
+    return this.masterService.getAdditionals();
+  }
+
+  @Get('active-promos')
+  @ApiOperation({ summary: 'Daftar promo aktif untuk quick-apply' })
+  async getActivePromos() {
+    return this.masterService.getActivePromos();
+  }
+
   @Get('payment-methods')
   @ApiOperation({ summary: 'Daftar metode pembayaran' })
   async getPaymentMethods() {

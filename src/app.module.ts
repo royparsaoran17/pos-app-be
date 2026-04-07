@@ -24,6 +24,7 @@ import { PackagingModule } from './staff/packaging/packaging.module';
 import { FinanceModule } from './admin/finance/finance.module';
 import { StoreModule } from './admin/store/store.module';
 import { PhotoboothModule } from './staff/photobooth/photobooth.module';
+import { AdminAdditionalModule } from './admin/additional/additional.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { PhotoboothModule } from './staff/photobooth/photobooth.module';
     FinanceModule,
     StoreModule,
     PhotoboothModule,
+    AdminAdditionalModule,
   ],
   providers: [PrismaService],
   exports: [PrismaService],

@@ -57,10 +57,21 @@ export class OrderService {
     }) : [];
     const toppingMap = new Map(toppingsData.map(t => [t.id, t]));
 
-    // Calculate subtotal
+    // Load additionals for price lookup
+    const allAdditionalIds = [...new Set(dto.items.flatMap(item => (item.additionals || []).map(a => a.additional_id)))];
+    const additionalsData = allAdditionalIds.length ? await this.prisma.additionals.findMany({
+      where: { id: { in: allAdditionalIds }, deleted_at: null },
+    }) : [];
+    const additionalMap = new Map(additionalsData.map(a => [a.id, a]));
+
+    // Calculate subtotal (menu price + additionals)
     let subtotal = 0;
     for (const item of dto.items) {
       subtotal += sizeMap.get(item.size).price;
+      for (const add of (item.additionals || [])) {
+        const addData = additionalMap.get(add.additional_id);
+        if (addData) subtotal += addData.price * (add.qty || 1);
+      }
     }
 
     // Handle member (optional)
@@ -160,16 +171,24 @@ export class OrderService {
                     let gramUsed = 0;
                     if (sizeData.category === 'FOOD' && toppingCount > 0) {
                       if (!sizeData.max_toppings && sizeData.total_topping_gram) {
-                        // Unlimited sizes (Thinwall/Large): total gram / number of toppings
                         gramUsed = Math.round((sizeData.total_topping_gram / toppingCount) * 10) / 10;
                       } else if (sizeData.max_toppings) {
-                        // Limited sizes (Small/Medium): gram_per_portion * multiplier
                         const topping = toppingMap.get(toppingId);
                         const multiplier = Math.floor(sizeData.max_toppings / toppingCount);
                         gramUsed = Math.round((topping?.gram_per_portion || 0) * multiplier * 10) / 10;
                       }
                     }
                     return { topping_id: toppingId, gram_used: gramUsed };
+                  }),
+                } : undefined,
+                additionals: item.additionals?.length ? {
+                  create: item.additionals.map((add) => {
+                    const addData = additionalMap.get(add.additional_id);
+                    return {
+                      additional_id: add.additional_id,
+                      qty: add.qty || 1,
+                      price: addData?.price || 0,
+                    };
                   }),
                 } : undefined,
               };
@@ -182,7 +201,10 @@ export class OrderService {
           member: { select: { id: true, name: true, phone: true } },
           promo: { select: { id: true, code: true, name: true, discount_type: true, discount_value: true } },
           order_items: {
-            include: { toppings: { include: { topping: true } } },
+            include: {
+              toppings: { include: { topping: true } },
+              additionals: { include: { additional: true } },
+            },
           },
         },
       });
@@ -247,7 +269,10 @@ export class OrderService {
           member: { select: { id: true, name: true, phone: true } },
           promo: { select: { id: true, code: true, name: true } },
           order_items: {
-            include: { toppings: { include: { topping: true } } },
+            include: {
+              toppings: { include: { topping: true } },
+              additionals: { include: { additional: true } },
+            },
           },
         },
       }),
@@ -270,7 +295,10 @@ export class OrderService {
         member: { select: { id: true, name: true, phone: true } },
         promo: { select: { id: true, code: true, name: true, discount_type: true, discount_value: true } },
         order_items: {
-          include: { toppings: { include: { topping: true } } },
+          include: {
+            toppings: { include: { topping: true } },
+            additionals: { include: { additional: true } },
+          },
         },
       },
     });
@@ -298,12 +326,23 @@ export class OrderService {
       }) : [];
       const editToppingMap = new Map(toppingsData.map(t => [t.id, t]));
 
+      // Load additionals
+      const editAdditionalIds = Array.from(new Set<number>(dto.items.flatMap((item: any) => (item.additionals || []).map((a: any) => a.additional_id))));
+      const editAdditionalsData = editAdditionalIds.length ? await this.prisma.additionals.findMany({
+        where: { id: { in: editAdditionalIds }, deleted_at: null },
+      }) : [];
+      const editAdditionalMap = new Map(editAdditionalsData.map(a => [a.id, a]));
+
       // Validate items before transaction
       let subtotal = 0;
       for (const item of dto.items) {
         const sizeData = sizeMap.get(item.size);
         if (!sizeData) throw new BadRequestException(`Ukuran "${item.size}" tidak valid`);
         subtotal += sizeData.price;
+        for (const add of (item.additionals || [])) {
+          const addData = editAdditionalMap.get(add.additional_id);
+          if (addData) subtotal += addData.price * (add.qty || 1);
+        }
       }
 
       orderData.subtotal = subtotal;
@@ -311,10 +350,11 @@ export class OrderService {
       if (orderData.total_price < 0) orderData.total_price = 0;
 
       await this.prisma.$transaction(async (tx) => {
-        // Delete existing items and their toppings
+        // Delete existing items, toppings, and additionals
         const existingItems = await tx.order_items.findMany({ where: { order_id: id } });
         for (const item of existingItems) {
           await tx.order_item_toppings.deleteMany({ where: { order_item_id: item.id } });
+          await tx.order_item_additionals.deleteMany({ where: { order_item_id: item.id } });
         }
         await tx.order_items.deleteMany({ where: { order_id: id } });
 
@@ -348,6 +388,20 @@ export class OrderService {
                   }
                 }
                 return { order_item_id: createdItem.id, topping_id: tid, gram_used: gramUsed };
+              }),
+            });
+          }
+
+          if (item.additionals?.length) {
+            await tx.order_item_additionals.createMany({
+              data: item.additionals.map((add: any) => {
+                const addData = editAdditionalMap.get(add.additional_id);
+                return {
+                  order_item_id: createdItem.id,
+                  additional_id: add.additional_id,
+                  qty: add.qty || 1,
+                  price: addData?.price || 0,
+                };
               }),
             });
           }
