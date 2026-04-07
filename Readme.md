@@ -1,13 +1,42 @@
-cd pos-be
-npm install
-npx prisma migrate dev
-npm run seed
+<p align="center">
+  Pos APP
+</p>
+
+## Installation
+
+```bash
+$ npm install
+```
+
+## Running the app
+
+```bash
+# development
+$ npm run start
+
+# watch mode
+$ npm run start:dev
+
+# production mode (run with PM2)
+$ npm run build
+$ pm2 start dist/main.js --name=dreesing-app-be
+```
+
+## Running Migratioj
+
+```bash
+# create new table
+$ npx prisma migrate dev â€”-name=â€œnew tableâ€
+
+# running migration
+$ npx prisma format
+$ npx prisma migrate dev
+$ npx prisma generate
+$ npx prisma migrate deploy
 
 
-cd pos-app-be
-docker build -t pos-be .
-docker run -p 9005:9005 \
-  -e DATABASE_URL="mysql://root:root_password@host.docker.internal:3306/pos_omt_db" \
-  -e JWT_SECRET="pos-app-secret-key-2024" \
-  -e JWT_EXPIRATION=86400 \
-  pos-be
+# running seeder
+$ npx prisma db seed
+```
+
+

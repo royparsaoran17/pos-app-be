@@ -78,15 +78,15 @@ model users {
   updated_at DateTime? @updatedAt
   deleted_at DateTime? @db.DateTime
 
-  store           stores?  @relation(fields: [store_id], references: [id])
+  store           stores?            @relation(fields: [store_id], references: [id])
   orders          orders[]
   sop_checklists  sop_checklists[]
   quality_checks  quality_checks[]
   stock_opname    stock_opname[]
   staff_expenses  staff_expenses[]
   attendances     staff_attendance[]
-  shifts           shifts[]
-  stock_packaging  stock_packaging[]
+  shifts          shifts[]
+  stock_packaging stock_packaging[]
 
   @@index([store_id])
 }
@@ -108,18 +108,18 @@ model members {
 }
 
 model toppings {
-  id                Int       @id @default(autoincrement())
-  name              String    @db.VarChar(100)
-  gram_per_portion  Float     @default(0)
-  is_active         Boolean   @default(true)
-  created_at        DateTime  @default(now())
-  updated_at        DateTime? @updatedAt
-  deleted_at        DateTime? @db.DateTime
+  id               Int       @id @default(autoincrement())
+  name             String    @db.VarChar(100)
+  gram_per_portion Float     @default(0)
+  is_active        Boolean   @default(true)
+  created_at       DateTime  @default(now())
+  updated_at       DateTime? @updatedAt
+  deleted_at       DateTime? @db.DateTime
 
-  order_items_toppings  order_item_toppings[]
-  stock_entries         stock_entries[]
-  quality_check_items   quality_check_items[]
-  stock_opname_items    stock_opname_items[]
+  order_items_toppings order_item_toppings[]
+  stock_entries        stock_entries[]
+  quality_check_items  quality_check_items[]
+  stock_opname_items   stock_opname_items[]
 
   @@index([deleted_at])
 }
@@ -138,19 +138,19 @@ model bumbu {
 }
 
 model menu_sizes {
-  id                Int          @id @default(autoincrement())
-  key               String       @unique @db.VarChar(50)
-  label             String       @db.VarChar(100)
-  category          MenuCategory @default(FOOD)
-  price             Int
-  hpp               Int          @default(0)
-  max_toppings      Int?
+  id                 Int          @id @default(autoincrement())
+  key                String       @unique @db.VarChar(50)
+  label              String       @db.VarChar(100)
+  category           MenuCategory @default(FOOD)
+  price              Int
+  hpp                Int          @default(0)
+  max_toppings       Int?
   total_topping_gram Int?
-  is_active         Boolean      @default(true)
-  sort_order    Int       @default(0)
-  created_at    DateTime  @default(now())
-  updated_at    DateTime? @updatedAt
-  deleted_at    DateTime? @db.DateTime
+  is_active          Boolean      @default(true)
+  sort_order         Int          @default(0)
+  created_at         DateTime     @default(now())
+  updated_at         DateTime?    @updatedAt
+  deleted_at         DateTime?    @db.DateTime
 
   @@index([deleted_at])
 }
@@ -179,24 +179,24 @@ model promos {
 }
 
 model orders {
-  id              Int           @id @default(autoincrement())
-  store_id        Int
-  order_number    String        @unique @db.VarChar(50)
-  queue_number    Int           @default(0)
-  staff_id        Int
-  member_id       Int?
-  promo_id        Int?
-  subtotal        Int           @default(0)
-  discount_amount Int           @default(0)
-  total_price     Int           @default(0)
+  id                  Int           @id @default(autoincrement())
+  store_id            Int
+  order_number        String        @unique @db.VarChar(50)
+  queue_number        Int           @default(0)
+  staff_id            Int
+  member_id           Int?
+  promo_id            Int?
+  subtotal            Int           @default(0)
+  discount_amount     Int           @default(0)
+  total_price         Int           @default(0)
   customer_name       String?       @db.VarChar(100)
   acquisition_channel String?       @db.VarChar(50)
   payment_method      PaymentMethod
   status              OrderStatus   @default(COMPLETED)
   notes               String?       @db.Text
-  created_at      DateTime      @default(now())
-  updated_at      DateTime?     @updatedAt
-  deleted_at      DateTime?     @db.DateTime
+  created_at          DateTime      @default(now())
+  updated_at          DateTime?     @updatedAt
+  deleted_at          DateTime?     @db.DateTime
 
   store       stores        @relation(fields: [store_id], references: [id])
   staff       users         @relation(fields: [staff_id], references: [id])
@@ -249,22 +249,22 @@ enum StockItemType {
 }
 
 model stock_entries {
-  id            Int           @id @default(autoincrement())
-  store_id      Int
-  item_type     StockItemType
-  item_name     String        @db.VarChar(100)
-  topping_id    Int?
-  bumbu_id      Int?
-  quantity      Float
-  unit          String        @db.VarChar(30)
+  id             Int           @id @default(autoincrement())
+  store_id       Int
+  item_type      StockItemType
+  item_name      String        @db.VarChar(100)
+  topping_id     Int?
+  bumbu_id       Int?
+  quantity       Float
+  unit           String        @db.VarChar(30)
   purchase_price Int
-  total_cost    Int
-  supplier      String?       @db.VarChar(100)
-  notes         String?       @db.Text
-  entry_date    DateTime      @default(now())
-  created_at    DateTime      @default(now())
-  updated_at    DateTime?     @updatedAt
-  deleted_at    DateTime?     @db.DateTime
+  total_cost     Int
+  supplier       String?       @db.VarChar(100)
+  notes          String?       @db.Text
+  entry_date     DateTime      @default(now())
+  created_at     DateTime      @default(now())
+  updated_at     DateTime?     @updatedAt
+  deleted_at     DateTime?     @db.DateTime
 
   store   stores    @relation(fields: [store_id], references: [id])
   topping toppings? @relation(fields: [topping_id], references: [id])
@@ -283,21 +283,21 @@ model expense_categories {
   updated_at DateTime? @updatedAt
   deleted_at DateTime? @db.DateTime
 
-  expenses        expenses[]
-  staff_expenses  staff_expenses[]
+  expenses       expenses[]
+  staff_expenses staff_expenses[]
 }
 
 model expenses {
-  id          Int       @id @default(autoincrement())
-  store_id    Int
-  category_id Int
-  description String    @db.VarChar(255)
-  amount      Int
-  expense_date DateTime @default(now())
-  notes       String?   @db.Text
-  created_at  DateTime  @default(now())
-  updated_at  DateTime? @updatedAt
-  deleted_at  DateTime? @db.DateTime
+  id           Int       @id @default(autoincrement())
+  store_id     Int
+  category_id  Int
+  description  String    @db.VarChar(255)
+  amount       Int
+  expense_date DateTime  @default(now())
+  notes        String?   @db.Text
+  created_at   DateTime  @default(now())
+  updated_at   DateTime? @updatedAt
+  deleted_at   DateTime? @db.DateTime
 
   store    stores             @relation(fields: [store_id], references: [id])
   category expense_categories @relation(fields: [category_id], references: [id])
@@ -326,15 +326,15 @@ model sop_tasks {
 }
 
 model sop_checklists {
-  id          Int      @id @default(autoincrement())
-  store_id    Int
-  staff_id    Int
-  shift_date  DateTime @db.Date
-  created_at  DateTime @default(now())
-  updated_at  DateTime? @updatedAt
+  id         Int       @id @default(autoincrement())
+  store_id   Int
+  staff_id   Int
+  shift_date DateTime  @db.Date
+  created_at DateTime  @default(now())
+  updated_at DateTime? @updatedAt
 
-  store stores              @relation(fields: [store_id], references: [id])
-  staff users                @relation(fields: [staff_id], references: [id])
+  store stores                @relation(fields: [store_id], references: [id])
+  staff users                 @relation(fields: [staff_id], references: [id])
   items sop_checklist_items[]
 
   @@unique([staff_id, shift_date])
@@ -342,12 +342,12 @@ model sop_checklists {
 }
 
 model sop_checklist_items {
-  id            Int      @id @default(autoincrement())
-  checklist_id  Int
-  task_id       Int
-  is_checked    Boolean  @default(false)
-  checked_at    DateTime? @db.DateTime
-  notes         String?  @db.VarChar(255)
+  id           Int       @id @default(autoincrement())
+  checklist_id Int
+  task_id      Int
+  is_checked   Boolean   @default(false)
+  checked_at   DateTime? @db.DateTime
+  notes        String?   @db.VarChar(255)
 
   checklist sop_checklists @relation(fields: [checklist_id], references: [id])
   task      sop_tasks      @relation(fields: [task_id], references: [id])
@@ -360,13 +360,13 @@ enum QualityStatus {
 }
 
 model quality_checks {
-  id          Int      @id @default(autoincrement())
-  store_id    Int
-  staff_id    Int
-  check_date  DateTime @db.Date
-  notes       String?  @db.Text
-  created_at  DateTime @default(now())
-  updated_at  DateTime? @updatedAt
+  id         Int       @id @default(autoincrement())
+  store_id   Int
+  staff_id   Int
+  check_date DateTime  @db.Date
+  notes      String?   @db.Text
+  created_at DateTime  @default(now())
+  updated_at DateTime? @updatedAt
 
   store stores                @relation(fields: [store_id], references: [id])
   staff users                 @relation(fields: [staff_id], references: [id])
@@ -376,26 +376,26 @@ model quality_checks {
 }
 
 model quality_check_items {
-  id              Int           @id @default(autoincrement())
+  id               Int           @id @default(autoincrement())
   quality_check_id Int
-  topping_id      Int
-  status          QualityStatus @default(GOOD)
-  notes           String?       @db.VarChar(255)
+  topping_id       Int
+  status           QualityStatus @default(GOOD)
+  notes            String?       @db.VarChar(255)
 
   quality_check quality_checks @relation(fields: [quality_check_id], references: [id])
   topping       toppings       @relation(fields: [topping_id], references: [id])
 }
 
 model stock_opname {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   store_id    Int
   staff_id    Int
-  opname_date DateTime @db.Date
-  created_at  DateTime @default(now())
+  opname_date DateTime  @db.Date
+  created_at  DateTime  @default(now())
   updated_at  DateTime? @updatedAt
 
-  store stores              @relation(fields: [store_id], references: [id])
-  staff users               @relation(fields: [staff_id], references: [id])
+  store stores               @relation(fields: [store_id], references: [id])
+  staff users                @relation(fields: [staff_id], references: [id])
   items stock_opname_items[]
 
   @@unique([staff_id, opname_date])
@@ -403,28 +403,28 @@ model stock_opname {
 }
 
 model stock_opname_items {
-  id            Int    @id @default(autoincrement())
-  opname_id     Int
-  topping_id    Int
-  weight_kg     Float
-  notes         String? @db.VarChar(255)
+  id         Int     @id @default(autoincrement())
+  opname_id  Int
+  topping_id Int
+  weight_kg  Float
+  notes      String? @db.VarChar(255)
 
   opname  stock_opname @relation(fields: [opname_id], references: [id])
   topping toppings     @relation(fields: [topping_id], references: [id])
 }
 
 model staff_expenses {
-  id          Int      @id @default(autoincrement())
-  store_id    Int
-  staff_id    Int
-  category_id Int
-  description String   @db.VarChar(255)
-  amount      Int
-  expense_date DateTime @default(now())
-  notes       String?  @db.Text
-  created_at  DateTime @default(now())
-  updated_at  DateTime? @updatedAt
-  deleted_at  DateTime? @db.DateTime
+  id           Int       @id @default(autoincrement())
+  store_id     Int
+  staff_id     Int
+  category_id  Int
+  description  String    @db.VarChar(255)
+  amount       Int
+  expense_date DateTime  @default(now())
+  notes        String?   @db.Text
+  created_at   DateTime  @default(now())
+  updated_at   DateTime? @updatedAt
+  deleted_at   DateTime? @db.DateTime
 
   store    stores             @relation(fields: [store_id], references: [id])
   staff    users              @relation(fields: [staff_id], references: [id])
@@ -484,32 +484,32 @@ model shifts {
 
 // ==================== Supplier Management ====================
 model suppliers {
-  id          Int       @id @default(autoincrement())
-  name        String    @db.VarChar(100)
-  phone       String?   @db.VarChar(20)
-  address     String?   @db.Text
-  email       String?   @db.VarChar(100)
-  contact_person String? @db.VarChar(100)
-  notes       String?   @db.Text
-  is_active   Boolean   @default(true)
-  created_at  DateTime  @default(now())
-  updated_at  DateTime? @updatedAt
-  deleted_at  DateTime? @db.DateTime
+  id             Int       @id @default(autoincrement())
+  name           String    @db.VarChar(100)
+  phone          String?   @db.VarChar(20)
+  address        String?   @db.Text
+  email          String?   @db.VarChar(100)
+  contact_person String?   @db.VarChar(100)
+  notes          String?   @db.Text
+  is_active      Boolean   @default(true)
+  created_at     DateTime  @default(now())
+  updated_at     DateTime? @updatedAt
+  deleted_at     DateTime? @db.DateTime
 
   @@index([deleted_at])
 }
 
 // ==================== Stock Packaging ====================
 model stock_packaging {
-  id              Int      @id @default(autoincrement())
-  store_id        Int
-  staff_id        Int
-  menu_size_key   String   @db.VarChar(50)
-  quantity        Int
-  packaging_date  DateTime @db.Date
-  notes           String?  @db.Text
-  created_at      DateTime @default(now())
-  updated_at      DateTime? @updatedAt
+  id             Int       @id @default(autoincrement())
+  store_id       Int
+  staff_id       Int
+  menu_size_key  String    @db.VarChar(50)
+  quantity       Int
+  packaging_date DateTime  @db.Date
+  notes          String?   @db.Text
+  created_at     DateTime  @default(now())
+  updated_at     DateTime? @updatedAt
 
   store stores @relation(fields: [store_id], references: [id])
   staff users  @relation(fields: [staff_id], references: [id])
@@ -530,18 +530,18 @@ enum WalletType {
 }
 
 model finance_transactions {
-  id                Int              @id @default(autoincrement())
-  store_id          Int
-  type              TransactionType
-  wallet            WalletType
-  amount            Int
-  description       String           @db.VarChar(255)
-  category          String?          @db.VarChar(100)
-  transaction_date  DateTime         @db.Date
-  notes             String?          @db.Text
-  created_at        DateTime         @default(now())
-  updated_at        DateTime?        @updatedAt
-  deleted_at        DateTime?        @db.DateTime
+  id               Int             @id @default(autoincrement())
+  store_id         Int
+  type             TransactionType
+  wallet           WalletType
+  amount           Int
+  description      String          @db.VarChar(255)
+  category         String?         @db.VarChar(100)
+  transaction_date DateTime        @db.Date
+  notes            String?         @db.Text
+  created_at       DateTime        @default(now())
+  updated_at       DateTime?       @updatedAt
+  deleted_at       DateTime?       @db.DateTime
 
   store stores @relation(fields: [store_id], references: [id])
 
@@ -575,8 +575,8 @@ model order_item_additionals {
   qty           Int @default(1)
   price         Int @default(0)
 
-  order_item order_items  @relation(fields: [order_item_id], references: [id])
-  additional additionals  @relation(fields: [additional_id], references: [id])
+  order_item order_items @relation(fields: [order_item_id], references: [id])
+  additional additionals @relation(fields: [additional_id], references: [id])
 
   @@index([order_item_id])
   @@index([additional_id])
