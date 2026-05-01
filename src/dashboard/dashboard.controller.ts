@@ -56,6 +56,15 @@ export class DashboardController {
     return this.dashboardService.getDailyRecap(targetDate, storeId);
   }
 
+  @Get('staff-recap')
+  @Roles('STAFF', 'SUPERADMIN')
+  @ApiOperation({ summary: 'Rekap transaksi harian untuk staff (uang masuk per metode bayar & menu terjual)' })
+  @ApiQuery({ name: 'date', required: false, description: 'Tanggal rekap (YYYY-MM-DD), default hari ini' })
+  async getStaffRecap(@Query('date') date?: string, @StoreId() storeId?: number) {
+    const targetDate = date || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+    return this.dashboardService.getStaffRecap(targetDate, storeId);
+  }
+
   @Get('topping-stock')
   @Roles('SUPERADMIN')
   @ApiOperation({ summary: 'Stok & pemakaian topping' })

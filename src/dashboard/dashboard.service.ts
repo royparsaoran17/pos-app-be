@@ -469,6 +469,83 @@ export class DashboardService {
     };
   }
 
+  async getStaffRecap(date: string, storeId?: number | null) {
+    const startOfDay = new Date(date + 'T00:00:00+07:00');
+    const endOfDay = new Date(date + 'T23:59:59.999+07:00');
+
+    const orderWhere: any = {
+      deleted_at: null,
+      created_at: { gte: startOfDay, lte: endOfDay },
+    };
+    if (storeId) orderWhere.store_id = storeId;
+
+    const [
+      totalOrders,
+      totalRevenue,
+      ordersByPayment,
+      itemsBySize,
+      menuSizes,
+    ] = await Promise.all([
+      this.prisma.orders.count({ where: orderWhere }),
+      this.prisma.orders.aggregate({
+        where: orderWhere,
+        _sum: { total_price: true, discount_amount: true },
+      }),
+      this.prisma.orders.groupBy({
+        by: ['payment_method'],
+        where: orderWhere,
+        _count: true,
+        _sum: { total_price: true },
+      }),
+      this.prisma.order_items.groupBy({
+        by: ['menu_size_key'],
+        where: { order: orderWhere },
+        _count: true,
+        _sum: { price: true },
+      }),
+      this.prisma.menu_sizes.findMany({
+        where: { deleted_at: null },
+        select: { key: true, label: true, price: true },
+      }),
+    ]);
+
+    const sizeLabelMap = Object.fromEntries(menuSizes.map((s) => [s.key, s.label]));
+
+    const byPayment = ordersByPayment
+      .map((p) => ({
+        method: p.payment_method,
+        count: p._count,
+        total: p._sum?.total_price || 0,
+      }))
+      .sort((a, b) => b.total - a.total);
+
+    const totalItemsSold = itemsBySize.reduce((sum, s) => sum + (s._count || 0), 0);
+
+    const byMenu = itemsBySize
+      .map((s) => ({
+        size_key: s.menu_size_key,
+        label: sizeLabelMap[s.menu_size_key] || s.menu_size_key,
+        count: s._count,
+        total: s._sum?.price || 0,
+      }))
+      .sort((a, b) => b.count - a.count);
+
+    return {
+      content: {
+        date,
+        summary: {
+          total_orders: totalOrders,
+          total_items_sold: totalItemsSold,
+          total_revenue: totalRevenue._sum.total_price || 0,
+          total_discount: totalRevenue._sum.discount_amount || 0,
+        },
+        by_payment: byPayment,
+        by_menu: byMenu,
+      },
+      message: 'Rekap staff berhasil dimuat',
+    };
+  }
+
   async getToppingStock(date?: string, storeId?: number | null) {
     const targetDate = date || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
     const startOfDay = new Date(targetDate + 'T00:00:00+07:00');
