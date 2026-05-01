@@ -15,11 +15,12 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger'
 import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { AuthGuard } from '../guards/auth.guard';
+import { RoleGuard, Roles } from '../guards/role.guard';
 import { StoreGuard, StoreId } from '../guards/store.guard';
 
 @ApiTags('Orders')
 @ApiBearerAuth()
-@UseGuards(AuthGuard, StoreGuard)
+@UseGuards(AuthGuard, RoleGuard, StoreGuard)
 @Controller('orders')
 export class OrderController {
   constructor(private orderService: OrderService) {}
@@ -50,13 +51,15 @@ export class OrderController {
   }
 
   @Put(':id')
+  @Roles('SUPERADMIN')
   @ApiOperation({ summary: 'Edit pesanan (admin)' })
   async updateOrder(@Param('id', ParseIntPipe) id: number, @Body() dto: any) {
     return this.orderService.updateOrder(id, dto);
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Batalkan pesanan' })
+  @Roles('SUPERADMIN')
+  @ApiOperation({ summary: 'Batalkan pesanan (Superadmin)' })
   async deleteOrder(@Param('id', ParseIntPipe) id: number) {
     return this.orderService.deleteOrder(id);
   }
